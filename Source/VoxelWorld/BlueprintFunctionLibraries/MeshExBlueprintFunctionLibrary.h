@@ -4,8 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
+#include "VoxelWorld/Mesh/VoxelQuad.h"
 #include "MeshExBlueprintFunctionLibrary.generated.h"
 
+struct FVoxelMeshParameters;
 class UProceduralMeshComponent;
 /**
  * UMeshExBlueprintFunctionLibrary
@@ -13,11 +15,11 @@ class UProceduralMeshComponent;
  * Utility functions for meshes.
  */
 UCLASS(BlueprintType)
-class VOXELWORLD_API UMeshExBlueprintFunctionLibrary : public UBlueprintFunctionLibrary
+class UMeshExBlueprintFunctionLibrary : public UBlueprintFunctionLibrary
 {
 	GENERATED_BODY()
 
 public:
 	UFUNCTION(BlueprintPure)
-	static void CreateProceduralCube(UProceduralMeshComponent* ProceduralMeshComponent, UMaterial* Material, const FVector& Offset = FVector(0), const FVector& CubeRadius = FVector(50.0f));
+	static void CreateProceduralCube(const FVoxelMeshParameters& VoxelMeshParameters, const EVoxelQuadFace QuadFaces = EVoxelQuadFace::All);
 };

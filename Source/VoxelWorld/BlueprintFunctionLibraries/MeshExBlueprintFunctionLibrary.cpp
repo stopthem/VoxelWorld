@@ -3,29 +3,53 @@
 
 #include "MeshExBlueprintFunctionLibrary.h"
 
+#include "Kismet/KismetMathLibrary.h"
 #include "VoxelWorld/Mesh/VoxelQuad.h"
 
-void UMeshExBlueprintFunctionLibrary::CreateProceduralCube(UProceduralMeshComponent* ProceduralMeshComponent, UMaterial* Material, const FVector& Offset, const FVector& CubeRadius)
+void UMeshExBlueprintFunctionLibrary::CreateProceduralCube(const FVoxelMeshParameters& VoxelMeshParameters, const EVoxelQuadFace QuadFaces)
 {
-	check(ProceduralMeshComponent);
+	check(VoxelMeshParameters.ProceduralMeshComponent);
 
-	check(Material);
+	check(VoxelMeshParameters.Material);
 
-	FVoxelQuad FrontQuad(ProceduralMeshComponent, EVoxelQuadFace::Front);
-	FrontQuad.GenerateMesh(Material, Offset, CubeRadius);
+	auto GenerateQuad = [&](EVoxelQuadFace QuadFace)
+	{
+		const int32 MeshSection = 6 * VoxelMeshParameters.MeshSectionGroup + UKismetMathLibrary::Log(static_cast<int32>(QuadFace), 2);
 
-	FVoxelQuad BackQuad(ProceduralMeshComponent, EVoxelQuadFace::Back);
-	BackQuad.GenerateMesh(Material, Offset, CubeRadius);
+		// First we fill crucial parameters with the constructor.
+		FVoxelQuad Quad(VoxelMeshParameters.ProceduralMeshComponent, QuadFace, MeshSection);
 
-	FVoxelQuad RightQuad(ProceduralMeshComponent, EVoxelQuadFace::Right);
-	RightQuad.GenerateMesh(Material, Offset, CubeRadius);
+		// Then we generate the quad.
+		Quad.GenerateMesh(VoxelMeshParameters.Material, VoxelMeshParameters.Offset, VoxelMeshParameters.CubeRadius);
+	};
 
-	FVoxelQuad LeftQuad(ProceduralMeshComponent, EVoxelQuadFace::Left);
-	LeftQuad.GenerateMesh(Material, Offset, CubeRadius);
+	if (EnumHasAnyFlags(QuadFaces, EVoxelQuadFace::Front))
+	{
+		GenerateQuad(EVoxelQuadFace::Front);
+	}
 
-	FVoxelQuad UpQuad(ProceduralMeshComponent, EVoxelQuadFace::Up);
-	UpQuad.GenerateMesh(Material, Offset, CubeRadius);
+	if (EnumHasAnyFlags(QuadFaces, EVoxelQuadFace::Back))
+	{
+		GenerateQuad(EVoxelQuadFace::Back);
+	}
 
-	FVoxelQuad DownQuad(ProceduralMeshComponent, EVoxelQuadFace::Down);
-	DownQuad.GenerateMesh(Material, Offset, CubeRadius);
+	if (EnumHasAnyFlags(QuadFaces, EVoxelQuadFace::Right))
+	{
+		GenerateQuad(EVoxelQuadFace::Right);
+	}
+
+	if (EnumHasAnyFlags(QuadFaces, EVoxelQuadFace::Left))
+	{
+		GenerateQuad(EVoxelQuadFace::Left);
+	}
+
+	if (EnumHasAnyFlags(QuadFaces, EVoxelQuadFace::Up))
+	{
+		GenerateQuad(EVoxelQuadFace::Up);
+	}
+
+	if (EnumHasAnyFlags(QuadFaces, EVoxelQuadFace::Down))
+	{
+		GenerateQuad(EVoxelQuadFace::Down);
+	}
 }

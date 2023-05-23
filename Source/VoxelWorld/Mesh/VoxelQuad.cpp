@@ -6,16 +6,26 @@
 #include "ProceduralMeshComponent.h"
 
 
+FVoxelMeshParameters::FVoxelMeshParameters()
+	: BlockType(EBlockType::Dirt), ProceduralMeshComponent(nullptr), Material(nullptr)
+{
+}
+
+FVoxelMeshParameters::FVoxelMeshParameters(UProceduralMeshComponent* ProceduralMeshComponent, const EBlockType BlockType, UMaterial* Material)
+	: BlockType(BlockType), ProceduralMeshComponent(ProceduralMeshComponent), Material(Material)
+{
+}
+
 FVoxelQuad::FVoxelQuad()
 	: QuadFace(EVoxelQuadFace::Front)
 {
 }
 
-FVoxelQuad::FVoxelQuad(UProceduralMeshComponent* ProceduralMeshComponent, const EVoxelQuadFace QuadFace)
+FVoxelQuad::FVoxelQuad(UProceduralMeshComponent* ProceduralMeshComponent, const EVoxelQuadFace QuadFace, const int32 MeshSection)
 {
 	this->ProceduralMeshComponent = ProceduralMeshComponent;
 	this->QuadFace = QuadFace;
-	MeshSection = static_cast<int32>(QuadFace);
+	this->MeshSection = MeshSection;
 }
 
 void FVoxelQuad::GenerateMesh(UMaterial* Material, const FVector& Offset, const FVector& CubeRadius)
@@ -43,25 +53,26 @@ void FVoxelQuad::GenerateMesh(UMaterial* Material, const FVector& Offset, const 
 		VerticesRotationAngle = Angle;
 	};
 
+	// Circle through every EVoxelQuadFace and set their axis and angles.
 	if (QuadFace == EVoxelQuadFace::Back)
 	{
 		SetRotationAxisAndAngle(FVector::UpVector, 180.0f);
 	}
 	else if (QuadFace == EVoxelQuadFace::Right)
 	{
-		SetRotationAxisAndAngle(FVector::UpVector, 90.0f);
+		SetRotationAxisAndAngle(FVector::UpVector, -90.0f);
 	}
 	else if (QuadFace == EVoxelQuadFace::Left)
 	{
-		SetRotationAxisAndAngle(FVector::UpVector, -90.0f);
+		SetRotationAxisAndAngle(FVector::UpVector, 90.0f);
 	}
 	else if (QuadFace == EVoxelQuadFace::Up)
 	{
-		SetRotationAxisAndAngle(FVector::RightVector, -90.0f);
+		SetRotationAxisAndAngle(FVector::RightVector, 90.0f);
 	}
 	else if (QuadFace == EVoxelQuadFace::Down)
 	{
-		SetRotationAxisAndAngle(FVector::RightVector, 90.0f);
+		SetRotationAxisAndAngle(FVector::RightVector, -90.0f);
 	}
 
 	TArray FrontVertices =
@@ -72,6 +83,9 @@ void FVoxelQuad::GenerateMesh(UMaterial* Material, const FVector& Offset, const 
 		FVector(CubeRadius.X, -CubeRadius.Y, -CubeRadius.Z), // Forward Bottom Left
 	};
 
+	// Think of this like a cube face rotating around the 0,0,0 point in the axis with angle.
+	// First rotate in the found axis and angle.
+	// Then for some reason the vertices were upside down. So we have to rotate them again in forward axis with 180 angle. Just flipping them around their center.
 	TArray RotatedVertices =
 	{
 		FrontVertices[0].RotateAngleAxis(VerticesRotationAngle, VerticesRotationAxis).RotateAngleAxis(180, FVector::ForwardVector), // Rotated Top Right
@@ -97,6 +111,7 @@ void FVoxelQuad::GenerateMesh(UMaterial* Material, const FVector& Offset, const 
 		Point2
 	};
 
+	// Top Left - Bottom Right x Top Left - Top Right
 	const FVector QuadNormal = FVector::CrossProduct(Vertices[2] - Vertices[1], Vertices[2] - Vertices[0]).GetSafeNormal();
 
 	for (int i = 0; i < 4; ++i)

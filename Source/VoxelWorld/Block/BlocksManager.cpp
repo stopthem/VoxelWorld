@@ -21,11 +21,12 @@ FVector2d ABlocksManager::GetAtlasPosOfTexture(EBlockType BlockType)
 		AtlasOneTextureNormalizedValue = 0.5f / (TextureDimensions.X / 2);
 	}
 
-	FBlockTextureTilingInfo* FoundTilingInfo = BlockTextureTilingInfos.FindByPredicate([&](const FBlockTextureTilingInfo& BlockTextureTilingInfo)
+	const FBlockTextureTilingInfo* FoundTilingInfo = BlockTextureTilingInfos.FindByPredicate([&](const FBlockTextureTilingInfo& BlockTextureTilingInfo)
 	{
 		return BlockTextureTilingInfo.BlockType == BlockType;
 	});
 
-	FoundTilingInfo->BlockTiling.Y = TextureDimensions.Y - FoundTilingInfo->BlockTiling.Y;
-	return FoundTilingInfo->BlockTiling * AtlasOneTextureNormalizedValue;
+	FVector2D BlockTiling = FVector2D(FoundTilingInfo->BlockTiling.X, FoundTilingInfo->BlockTiling.Y);
+	BlockTiling.Y = TextureDimensions.Y - FoundTilingInfo->BlockTiling.Y;
+	return BlockTiling * AtlasOneTextureNormalizedValue;
 }

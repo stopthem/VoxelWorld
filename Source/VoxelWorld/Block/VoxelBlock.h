@@ -7,48 +7,47 @@
 #include "VoxelWorld/Mesh/VoxelQuad.h"
 #include "VoxelBlock.generated.h"
 
+class AVoxelChunk;
 class ABlocksManager;
 enum class EBlockType : uint8;
 enum class EVoxelQuadFace : uint8;
 class UProceduralMeshComponent;
 /*
- * AVoxelBlock
+ * FVoxelBlock
  *
- * Base class that all blocks in the game has.
+ * Base struct to construct a block.
  */
-UCLASS()
-class VOXELWORLD_API AVoxelBlock : public AActor
+USTRUCT()
+struct VOXELWORLD_API FVoxelBlock
 {
 	GENERATED_BODY()
 
 public:
-	AVoxelBlock();
+	FVoxelBlock();
+
+	explicit FVoxelBlock(const FVoxelMeshParameters& VoxelMeshParameters, AVoxelChunk* VoxelChunk);
+
+public:
+	EBlockType GetBlockType() const { return BlockType; }
 
 protected:
-	virtual void BeginPlay() override;
-
-protected:
-	UPROPERTY(EditAnywhere, Category="Block")
 	EBlockType BlockType;
 
-	UPROPERTY(EditAnywhere, Category="Block")
-	FVector MeshCubeRadius = FVector(100.0f, 100.0f, 100.0f);
+	UPROPERTY(VisibleAnywhere)
+	AVoxelChunk* VoxelChunk;
 
-	UPROPERTY(EditAnywhere, Category="BlockMesh")
-	TObjectPtr<UMaterial> BlockMeshMaterial;
+	FVector Offset;
+
+protected:
+	bool HasSolidNeighbour(const FVector& OffsetDirVector) const;
+
+	// UPROPERTY(VisibleAnywhere)
+	// FVector MeshCubeRadius = FVector(100.0f, 100.0f, 100.0f);
+	//
+	// UPROPERTY(VisibleAnywhere)
+	// TObjectPtr<UMaterial> BlockMeshMaterial;
 
 private:
-	UFUNCTION()
-	void SetMaterialTiling();
-
-protected:
-	UPROPERTY(VisibleAnywhere, Category="BlockMesh")
-	TObjectPtr<UProceduralMeshComponent> ProceduralMeshComponent;
-
-	UPROPERTY(VisibleAnywhere)
-	TObjectPtr<USceneComponent> SceneComponent;
-
-protected:
-	UPROPERTY()
-	TObjectPtr<ABlocksManager> BlocksManager;
+	// 	UFUNCTION()
+	// void SetMaterialTiling();
 };

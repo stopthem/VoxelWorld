@@ -6,16 +6,21 @@
 #include "GameFramework/GameModeBase.h"
 #include "VoxelWorldGameModeBase.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FVoxelWorldGameMode_OnManagersSpawned);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FVoxelWorldGameMode_OnManagersSpawned, AVoxelWorldGameModeBase*, VoxelWorldGameModeBase);
 
 class UGameplayStatics;
 /**
- * 
+ * AVoxelWorldGameModeBase
+ *
+ * Game mode base class that this game uses.
  */
 UCLASS()
 class VOXELWORLD_API AVoxelWorldGameModeBase : public AGameModeBase
 {
 	GENERATED_BODY()
+
+public:
+	AVoxelWorldGameModeBase();
 
 protected:
 	virtual void BeginPlay() override;
@@ -26,13 +31,17 @@ public:
 		return Cast<AVoxelWorldGameModeBase>(World->GetAuthGameMode());
 	}
 
+	// Broadcasted when all the managers in ToSpawnManagers are spawned.
 	UPROPERTY(BlueprintAssignable)
 	FVoxelWorldGameMode_OnManagersSpawned OnManagersSpawned;
 
 public:
+	// Holder of the manager blueprints.
 	UPROPERTY(EditAnywhere, Category="Managers")
 	TArray<TSubclassOf<AActor>> ToSpawnManagers;
 
+	// Get manager of the given type.
+	// Only get manager if given type is derived from AActor.
 	template <typename TManagerClass>
 	typename TEnableIf<TIsDerivedFrom<TManagerClass, AActor>::IsDerived, TManagerClass*>::Type GetManager();
 

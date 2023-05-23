@@ -3,6 +3,10 @@
 
 #include "VoxelWorldGameModeBase.h"
 
+AVoxelWorldGameModeBase::AVoxelWorldGameModeBase()
+{
+}
+
 void AVoxelWorldGameModeBase::BeginPlay()
 {
 	Super::BeginPlay();
@@ -25,7 +29,7 @@ void AVoxelWorldGameModeBase::SpawnManagers()
 		SpawnManager(ToSpawnManagerClass);
 	}
 
-	OnManagersSpawned.Broadcast();
+	OnManagersSpawned.Broadcast(this);
 }
 
 AActor* AVoxelWorldGameModeBase::SpawnManager(const TSubclassOf<AActor> ActorClassToSpawn)

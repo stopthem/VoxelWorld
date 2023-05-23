@@ -11,7 +11,9 @@ enum class EBlockType : uint8
 {
 	Grass,
 	Dirt,
-	Stone
+	Stone,
+	Air,
+	Water
 };
 
 USTRUCT()
@@ -24,7 +26,7 @@ public:
 	EBlockType BlockType;
 
 	UPROPERTY(EditAnywhere)
-	FVector2D BlockTiling;
+	FIntVector2 BlockTiling;
 };
 
 /*
@@ -43,14 +45,20 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
+public:
+	UMaterial* GetBlockMaterial() const { return BlockMeshMaterial; }
+
 private:
-	UPROPERTY(EditAnywhere, Category="Block Texture")
+	UPROPERTY(EditAnywhere, Category="Block Material")
+	TObjectPtr<UMaterial> BlockMeshMaterial;
+
+	UPROPERTY(EditAnywhere, Category="Block Material")
 	TObjectPtr<UTexture2D> BlocksTexture;
 
-	UPROPERTY(EditAnywhere, Category="Block Texture")
+	UPROPERTY(EditAnywhere, Category="Block Material")
 	FVector2D TextureDimensions = FVector2D(16, 16);
 
-	UPROPERTY(EditAnywhere, Category="Block Texture")
+	UPROPERTY(EditAnywhere, Category="Block Material")
 	TArray<FBlockTextureTilingInfo> BlockTextureTilingInfos;
 
 public:
