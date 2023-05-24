@@ -18,27 +18,27 @@ public:
 	UArrayBlueprintFunctionLibrary();
 
 	template <typename T>
-	static void RemoveDuplicates(TArray<T>& sourceArray);
+	static void RemoveDuplicates(TArray<T>& Source);
 
 	template <typename T>
-	static void AppendUnique(TArray<T>& source, TArray<T>& target);
+	static void AppendUnique(TArray<T>& Source, TArray<T>& Target);
 
 public:
-	static TArray<float> ConvertDoubleArrayToFloatArray(TArray<double>& source);
+	static TArray<float> ConvertDoubleArrayToFloatArray(TArray<double>& Source);
 };
 
 template <typename T>
-void UArrayBlueprintFunctionLibrary::RemoveDuplicates(TArray<T>& sourceArray)
+void UArrayBlueprintFunctionLibrary::RemoveDuplicates(TArray<T>& Source)
 {
-	TSet<T> set = TSet(sourceArray);
-	sourceArray = set.Array();
+	TSet<T> Set = TSet(Source);
+	Source = Set.Array();
 }
 
 template <typename T>
-void UArrayBlueprintFunctionLibrary::AppendUnique(TArray<T>& source, TArray<T>& target)
+void UArrayBlueprintFunctionLibrary::AppendUnique(TArray<T>& Source, TArray<T>& Target)
 {
-	for (auto sourceElement : source)
+	for (auto SourceElement : Source)
 	{
-		target.AddUnique(sourceElement);
+		Target.AddUnique(SourceElement);
 	}
-}
+} 

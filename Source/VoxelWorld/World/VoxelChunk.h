@@ -64,13 +64,16 @@ public:
 	bool TryGetBlockAt(const FVector& Offset, FVoxelBlock& out_FoundBlock);
 
 protected:
-	TArray<TArray<TArray<FVoxelBlock>>> ChunkVoxelBlocks;
+	TArray<TArray<TArray<FVoxelBlock>>> ChunkBlocks;
 
-	// x + Width * (y + Depth * z) = original x,y,z
+	// flat = x + Width * (y + Depth * z) = original x,y,z
+	// x = i % Width
+	// y = (i / Width) % Height
+	// z = i /  (Width * Height)
 	TArray<EBlockType> ChunkBlockTypes;
 
 public:
-	int Get3DElementPosInFlat(const int X, const int Y, const int Z) const;
+	int Get3DElementPosInFlat(int X, int Y, int Z) const;
 
 protected:
 	void BuildChunk(const ABlocksManager* BlocksManager);

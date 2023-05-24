@@ -11,19 +11,19 @@
 class UProceduralMeshComponent;
 
 /*
- * FVoxelMeshParameters
+ * FVoxelBlockParameters
  *
  * Holds variables about Voxel Mesh.
  */
 USTRUCT(BlueprintType)
-struct FVoxelMeshParameters
+struct FVoxelBlockParameters
 {
 	GENERATED_BODY()
 
 public:
-	FVoxelMeshParameters();
+	FVoxelBlockParameters();
 
-	FVoxelMeshParameters(UProceduralMeshComponent* ProceduralMeshComponent, const EBlockType BlockType, UMaterial* Material);
+	FVoxelBlockParameters(UProceduralMeshComponent* ProceduralMeshComponent, const EBlockType BlockType, UMaterial* Material);
 
 	UPROPERTY(EditAnywhere)
 	EBlockType BlockType;
@@ -54,7 +54,7 @@ public:
  *
  * Enum that holds quad face.
  */
-UENUM()
+UENUM(meta=(BitFlags, UseEnumValuesAsMaskValuesInEditor = "true"))
 enum class EVoxelQuadFace : uint8
 {
 	None = 0 UMETA(Hidden),

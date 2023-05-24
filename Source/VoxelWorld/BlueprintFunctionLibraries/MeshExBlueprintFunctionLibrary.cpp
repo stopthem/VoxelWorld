@@ -6,21 +6,21 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "VoxelWorld/Mesh/VoxelQuad.h"
 
-void UMeshExBlueprintFunctionLibrary::CreateProceduralCube(const FVoxelMeshParameters& VoxelMeshParameters, const EVoxelQuadFace QuadFaces)
+void UMeshExBlueprintFunctionLibrary::CreateProceduralCube(const FVoxelBlockParameters& VoxelBlockParameters, const EVoxelQuadFace QuadFaces)
 {
-	check(VoxelMeshParameters.ProceduralMeshComponent);
+	check(VoxelBlockParameters.ProceduralMeshComponent);
 
-	check(VoxelMeshParameters.Material);
+	check(VoxelBlockParameters.Material);
 
 	auto GenerateQuad = [&](EVoxelQuadFace QuadFace)
 	{
-		const int32 MeshSection = 6 * VoxelMeshParameters.MeshSectionGroup + UKismetMathLibrary::Log(static_cast<int32>(QuadFace), 2);
+		const int32 MeshSection = 6 * VoxelBlockParameters.MeshSectionGroup + UKismetMathLibrary::Log(static_cast<int32>(QuadFace), 2);
 
 		// First we fill crucial parameters with the constructor.
-		FVoxelQuad Quad(VoxelMeshParameters.ProceduralMeshComponent, QuadFace, MeshSection);
+		FVoxelQuad Quad(VoxelBlockParameters.ProceduralMeshComponent, QuadFace, MeshSection);
 
 		// Then we generate the quad.
-		Quad.GenerateMesh(VoxelMeshParameters.Material, VoxelMeshParameters.Offset, VoxelMeshParameters.CubeRadius);
+		Quad.GenerateMesh(VoxelBlockParameters.Material, VoxelBlockParameters.Offset, VoxelBlockParameters.CubeRadius);
 	};
 
 	if (EnumHasAnyFlags(QuadFaces, EVoxelQuadFace::Front))

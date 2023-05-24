@@ -7,7 +7,7 @@
 #include "VoxelWorld/Mesh/VoxelQuad.h"
 #include "MeshExBlueprintFunctionLibrary.generated.h"
 
-struct FVoxelMeshParameters;
+struct FVoxelBlockParameters;
 class UProceduralMeshComponent;
 /**
  * UMeshExBlueprintFunctionLibrary
@@ -21,5 +21,5 @@ class UMeshExBlueprintFunctionLibrary : public UBlueprintFunctionLibrary
 
 public:
 	UFUNCTION(BlueprintPure)
-	static void CreateProceduralCube(const FVoxelMeshParameters& VoxelMeshParameters, const EVoxelQuadFace QuadFaces = EVoxelQuadFace::All);
+	static void CreateProceduralCube(const FVoxelBlockParameters& VoxelBlockParameters, EVoxelQuadFace QuadFaces = EVoxelQuadFace::All);
 };

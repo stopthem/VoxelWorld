@@ -3,6 +3,7 @@
 
 #include "VoxelChunk.h"
 
+#include "Kismet/KismetMathLibrary.h"
 #include "VoxelWorld/VoxelWorldGameModeBase.h"
 #include "VoxelWorld/Block/BlocksManager.h"
 #include "VoxelWorld/Block/VoxelBlock.h"
@@ -35,54 +36,83 @@ void AVoxelChunk::OnManagersSpawned(AVoxelWorldGameModeBase* VoxelWorldGameModeB
 
 bool AVoxelChunk::TryGetBlockAt(const FVector& Offset, FVoxelBlock& out_FoundBlock)
 {
-	if (!UMathExBlueprintFunctionLibrary::IsWithinRange(Offset.X, 0, Width))
+	if (!UKismetMathLibrary::InRange_FloatFloat(Offset.Y, 0, Width, true, false))
 	{
 		return false;
 	}
 
-	if (!UMathExBlueprintFunctionLibrary::IsWithinRange(Offset.Y, 0, Height))
+	if (!UKismetMathLibrary::InRange_FloatFloat(Offset.Z, 0, Height, true, false))
 	{
 		return false;
 	}
 
-	if (!UMathExBlueprintFunctionLibrary::IsWithinRange(Offset.Z, 0, Depth))
+	if (!UKismetMathLibrary::InRange_FloatFloat(Offset.X, 0, Depth, true, false))
 	{
 		return false;
 	}
 
-	out_FoundBlock = ChunkVoxelBlocks[Offset.X][Offset.Y][Offset.Z];
+	out_FoundBlock = ChunkBlocks[Offset.Y][Offset.Z][Offset.X];
 	return true;
 }
 
 int AVoxelChunk::Get3DElementPosInFlat(const int X, const int Y, const int Z) const
 {
-	return X + Width * (Y + Depth * Z);
+	return Y + Width * (Z + Depth * X);
 }
 
 void AVoxelChunk::BuildChunk(const ABlocksManager* BlocksManager)
 {
-	FArray3DFunctionLibrary::SetNum(ChunkVoxelBlocks, Width, Height, Depth);
+	FArray3DFunctionLibrary::SetNum(ChunkBlocks, Width, Height, Depth);
 
-	ChunkBlockTypes.SetNum(Width * Height * Depth);
+	ChunkBlockTypes.SetNum(Width * Depth * Height);
 
-	FVoxelMeshParameters VoxelMeshParameters(ProceduralMeshComponent, EBlockType::Stone, BlocksManager->GetBlockMaterial());
+	for (int i = 0; i < ChunkBlockTypes.Num(); ++i)
+	{
+		const int Y = i % Width;
+		const int Z = (i / Width) % Height;
+		const int X = i / (Width * Height);
+
+		const float fBM = UMathExBlueprintFunctionLibrary::fBM(Y, X, 18, 0.001f, 2.0f, 4);
+		UE_LOG(LogTemp, Warning, TEXT("offset in metric %s  fbm %f"), *FVector(Y,Z,X).ToString(), fBM);
+		ChunkBlockTypes[i] = fBM > Z ? EBlockType::Dirt : EBlockType::Air;
+	}
+
+	FVoxelBlockParameters VoxelBlockParameters(ProceduralMeshComponent, EBlockType::Stone, BlocksManager->GetBlockMaterial());
 
 	int32 MeshSectionGroup = 0;
 
-	for (int z = 0; z < Depth; ++z)
+	for (int x = 0; x < Depth; ++x)
 	{
-		for (int y = 0; y < Height; ++y)
+		for (int z = 0; z < Height; ++z)
 		{
-			for (int x = 0; x < Width; ++x)
+			for (int y = 0; y < Width; ++y)
 			{
-				VoxelMeshParameters.Offset = FVector(x, y, z) * 100.0f;
-				VoxelMeshParameters.MeshSectionGroup = MeshSectionGroup;
+				VoxelBlockParameters.Offset = FVector(x, y, z) * 100.0f;
+				VoxelBlockParameters.MeshSectionGroup = MeshSectionGroup;
 
 				MeshSectionGroup++;
 
-				ChunkVoxelBlocks[x][y][z] = FVoxelBlock(VoxelMeshParameters, this);
+				VoxelBlockParameters.BlockType = ChunkBlockTypes[Get3DElementPosInFlat(x, y, z)];
 
-				ChunkBlockTypes[Get3DElementPosInFlat(x, y, z)] = VoxelMeshParameters.BlockType;
+				ChunkBlocks[y][z][x] = FVoxelBlock(VoxelBlockParameters, this);
+			}
+		}
+	}
+
+	for (int x = 0; x < Depth; ++x)
+	{
+		for (int z = 0; z < Height; ++z)
+		{
+			for (int y = 0; y < Width; ++y)
+			{
+				FVoxelBlock Block = ChunkBlocks[y][z][x];
+
+				if (Block.GetBlockType() == EBlockType::Air)
+				{
+					continue;
+				}
+
+				Block.BuildCube();
 			}
 		}
 	}

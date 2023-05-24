@@ -10,20 +10,25 @@
 
 // Sets default values
 FVoxelBlock::FVoxelBlock()
-	: BlockType(EBlockType::Dirt), VoxelChunk(nullptr)
+	: VoxelChunk(nullptr)
 {
 }
 
-FVoxelBlock::FVoxelBlock(const FVoxelMeshParameters& VoxelMeshParameters, AVoxelChunk* VoxelChunk)
-	: BlockType(VoxelMeshParameters.BlockType), VoxelChunk(VoxelChunk), Offset(VoxelMeshParameters.Offset)
+FVoxelBlock::FVoxelBlock(const FVoxelBlockParameters& VoxelBlockParameters, AVoxelChunk* VoxelChunk)
+	: VoxelChunk(VoxelChunk), VoxelBlockParameters(VoxelBlockParameters)
 {
-	EVoxelQuadFace QuadFacesToGenerate;
+}
+
+void FVoxelBlock::BuildCube() const
+{
+	EVoxelQuadFace QuadFacesToGenerate = EVoxelQuadFace::None;
 
 	auto CheckNeighbourForQuadFace = [&](const FVector& OffsetDirVector, const EVoxelQuadFace ToBeAddedQuadFace)
 	{
 		if (!HasSolidNeighbour(OffsetDirVector))
 		{
 			QuadFacesToGenerate |= ToBeAddedQuadFace;
+			// UE_LOG(LogTemp, Warning, TEXT("looked from %s to metric offset %s added face %s"), *GetOffsetInMeters().ToString(), *OffsetDirVector.ToString(), *UEnum::GetValueAsString(ToBeAddedQuadFace));
 		}
 	};
 
@@ -34,20 +39,20 @@ FVoxelBlock::FVoxelBlock(const FVoxelMeshParameters& VoxelMeshParameters, AVoxel
 	CheckNeighbourForQuadFace(FVector::UpVector, EVoxelQuadFace::Up);
 	CheckNeighbourForQuadFace(FVector::DownVector, EVoxelQuadFace::Down);
 
-	UMeshExBlueprintFunctionLibrary::CreateProceduralCube(VoxelMeshParameters, QuadFacesToGenerate);
+	// UE_LOG(LogTemp, Warning, TEXT("sent offset %s faces %i"), *GetOffsetInMeters().ToString(), static_cast<int32>(QuadFacesToGenerate));
+	UMeshExBlueprintFunctionLibrary::CreateProceduralCube(VoxelBlockParameters, QuadFacesToGenerate);
 }
 
 bool FVoxelBlock::HasSolidNeighbour(const FVector& OffsetDirVector) const
 {
 	FVoxelBlock Neighbour;
-	if (!VoxelChunk->TryGetBlockAt(Offset + OffsetDirVector, Neighbour))
+	if (!VoxelChunk->TryGetBlockAt(GetOffsetInMeters() + OffsetDirVector, Neighbour))
 	{
 		return false;
 	}
 
 	if (Neighbour.GetBlockType() == EBlockType::Water || Neighbour.GetBlockType() == EBlockType::Air)
 	{
-		// UE_LOG(LogTemp, Warning, TEXT("from %s dir vector %s is air or water "), *Offset.ToString(), *(Offset+OffsetDirVector).ToString());
 		return false;
 	}
 

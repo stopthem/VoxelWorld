@@ -18,7 +18,10 @@ struct FArray3DFunctionLibrary
 
 public:
 	template <typename TArrayType>
-	static void SetNum(TArray<TArray<TArray<TArrayType>>>& Array, const int Width, const int Height, const int Depth);
+	static void SetNum(TArray<TArray<TArray<TArrayType>>>& Array, int Width, int Height, int Depth);
+
+	template <typename TArrayType>
+	static bool IsInvalidIndex(TArray<TArray<TArray<TArrayType>>>& Array, int Width, int Height, int Depth);
 };
 
 template <typename TArrayType>
@@ -34,4 +37,25 @@ void FArray3DFunctionLibrary::SetNum(TArray<TArray<TArray<TArrayType>>>& Array, 
 			Array[x][y].SetNum(Depth);
 		}
 	}
+}
+
+template <typename TArrayType>
+bool FArray3DFunctionLibrary::IsInvalidIndex(TArray<TArray<TArray<TArrayType>>>& Array, int Width, int Height, int Depth)
+{
+	if (!Array.IsValidIndex(Width))
+	{
+		return false;
+	}
+
+	if (!Array[Width].IsValidIndex(Height))
+	{
+		return false;
+	}
+
+	if (!Array[Width][Height].IsValidIndex(Depth))
+	{
+		return false;
+	}
+
+	return true;
 }

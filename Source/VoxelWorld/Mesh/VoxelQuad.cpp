@@ -6,12 +6,12 @@
 #include "ProceduralMeshComponent.h"
 
 
-FVoxelMeshParameters::FVoxelMeshParameters()
+FVoxelBlockParameters::FVoxelBlockParameters()
 	: BlockType(EBlockType::Dirt), ProceduralMeshComponent(nullptr), Material(nullptr)
 {
 }
 
-FVoxelMeshParameters::FVoxelMeshParameters(UProceduralMeshComponent* ProceduralMeshComponent, const EBlockType BlockType, UMaterial* Material)
+FVoxelBlockParameters::FVoxelBlockParameters(UProceduralMeshComponent* ProceduralMeshComponent, const EBlockType BlockType, UMaterial* Material)
 	: BlockType(BlockType), ProceduralMeshComponent(ProceduralMeshComponent), Material(Material)
 {
 }
@@ -60,19 +60,19 @@ void FVoxelQuad::GenerateMesh(UMaterial* Material, const FVector& Offset, const 
 	}
 	else if (QuadFace == EVoxelQuadFace::Right)
 	{
-		SetRotationAxisAndAngle(FVector::UpVector, -90.0f);
+		SetRotationAxisAndAngle(FVector::UpVector, 90.0f);
 	}
 	else if (QuadFace == EVoxelQuadFace::Left)
 	{
-		SetRotationAxisAndAngle(FVector::UpVector, 90.0f);
+		SetRotationAxisAndAngle(FVector::DownVector, 90.0f);
 	}
 	else if (QuadFace == EVoxelQuadFace::Up)
 	{
-		SetRotationAxisAndAngle(FVector::RightVector, 90.0f);
+		SetRotationAxisAndAngle(FVector::LeftVector, 90.0f);
 	}
 	else if (QuadFace == EVoxelQuadFace::Down)
 	{
-		SetRotationAxisAndAngle(FVector::RightVector, -90.0f);
+		SetRotationAxisAndAngle(FVector::RightVector, 90.0f);
 	}
 
 	TArray FrontVertices =
@@ -84,21 +84,19 @@ void FVoxelQuad::GenerateMesh(UMaterial* Material, const FVector& Offset, const 
 	};
 
 	// Think of this like a cube face rotating around the 0,0,0 point in the axis with angle.
-	// First rotate in the found axis and angle.
-	// Then for some reason the vertices were upside down. So we have to rotate them again in forward axis with 180 angle. Just flipping them around their center.
 	TArray RotatedVertices =
 	{
-		FrontVertices[0].RotateAngleAxis(VerticesRotationAngle, VerticesRotationAxis).RotateAngleAxis(180, FVector::ForwardVector), // Rotated Top Right
-		FrontVertices[1].RotateAngleAxis(VerticesRotationAngle, VerticesRotationAxis).RotateAngleAxis(180, FVector::ForwardVector), // Rotated Bottom Right
-		FrontVertices[2].RotateAngleAxis(VerticesRotationAngle, VerticesRotationAxis).RotateAngleAxis(180, FVector::ForwardVector), // Rotated Top Left
-		FrontVertices[3].RotateAngleAxis(VerticesRotationAngle, VerticesRotationAxis).RotateAngleAxis(180, FVector::ForwardVector), // Rotated Bottom Left
+		FrontVertices[0].RotateAngleAxis(VerticesRotationAngle, VerticesRotationAxis), // Rotated Top Right
+		FrontVertices[1].RotateAngleAxis(VerticesRotationAngle, VerticesRotationAxis), // Rotated Bottom Right
+		FrontVertices[2].RotateAngleAxis(VerticesRotationAngle, VerticesRotationAxis), // Rotated Top Left
+		FrontVertices[3].RotateAngleAxis(VerticesRotationAngle, VerticesRotationAxis), // Rotated Bottom Left
 	};
 
 	Vertices = {
-		RotatedVertices[0] + Offset,
-		RotatedVertices[1] + Offset,
+		RotatedVertices[3] + Offset,
 		RotatedVertices[2] + Offset,
-		RotatedVertices[3] + Offset
+		RotatedVertices[1] + Offset,
+		RotatedVertices[0] + Offset,
 	};
 
 	Triangles =

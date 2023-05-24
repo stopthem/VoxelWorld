@@ -18,28 +18,29 @@ class UMathExBlueprintFunctionLibrary : public UBlueprintFunctionLibrary
 
 public:
 	UFUNCTION(BlueprintPure)
-	static float AngleBetween(const FVector& aVector, const FVector& bVector);
+	static float AngleBetweenVectors(const FVector& AVector, const FVector& BVector);
 
 	UFUNCTION(BlueprintPure)
-	static float SignedAngleBetween(const FVector& aVector, const FVector& bVector, const FVector& axisVector);
-
-public:
-	UFUNCTION(BlueprintPure)
-	static float NormalizeToRangeClamped(float value, float min, float max);
-
-	UFUNCTION(BlueprintPure)
-	static float ValueInCurveOrGiven(const UCurveFloat* curveFloat, float val);
-
-	UFUNCTION(BlueprintPure)
-	static bool IsWithinRange(const float val, const float min, const float max);
+	static float SignedAngleBetween(const FVector& AVector, const FVector& BVector, const FVector& AxisVector);
 
 public:
 	UFUNCTION(BlueprintPure)
-	static float NormalizeToFloatRange(float value, const FFloatRange& floatRange);
+	static float NormalizeToRangeClamped(float Value, float Min, float Max);
 
 	UFUNCTION(BlueprintPure)
-	static float LerpInFloatRange(float value, const FFloatRange& floatRange);
+	static float ValueInCurveOrGiven(const UCurveFloat* CurveFloat, float Val);
+
+public:
+	UFUNCTION(BlueprintPure)
+	static float NormalizeToFloatRange(float Value, const FFloatRange& FloatRange);
 
 	UFUNCTION(BlueprintPure)
-	static bool IsWithinFloatRange(const float val, const FFloatRange& floatRange);
+	static float LerpInFloatRange(float Value, const FFloatRange& FloatRange);
+
+	UFUNCTION(BlueprintPure)
+	static bool IsWithinFloatRange(float Val, const FFloatRange& FloatRange);
+
+public:
+	UFUNCTION(BlueprintPure)
+	static float fBM(float X, float Z, int Octaves, float Scale, float HeightScale, float HeightOffset);
 };

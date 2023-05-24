@@ -5,48 +5,57 @@
 
 #include "Kismet/KismetMathLibrary.h"
 
-float UMathExBlueprintFunctionLibrary::AngleBetween(const FVector& aVector, const FVector& bVector)
+float UMathExBlueprintFunctionLibrary::AngleBetweenVectors(const FVector& AVector, const FVector& BVector)
 {
-	const float dot = aVector.Dot(bVector);
-	return FMath::RadiansToDegrees(FMath::Acos(dot));
+	const float Dot = AVector.Dot(BVector);
+	return FMath::RadiansToDegrees(FMath::Acos(Dot));
 }
 
-float UMathExBlueprintFunctionLibrary::SignedAngleBetween(const FVector& aVector, const FVector& bVector, const FVector& axisVector)
+float UMathExBlueprintFunctionLibrary::SignedAngleBetween(const FVector& AVector, const FVector& BVector, const FVector& AxisVector)
 {
-	const float angleBetween = AngleBetween(aVector, bVector);
+	const float AngleBetween = AngleBetweenVectors(AVector, BVector);
 
-	const FVector crossVector = aVector.Cross(bVector);
+	const FVector CrossVector = AVector.Cross(BVector);
 
-	return crossVector.Dot(axisVector) < 0 ? -angleBetween : angleBetween;
+	return CrossVector.Dot(AxisVector) < 0 ? -AngleBetween : AngleBetween;
 }
 
-float UMathExBlueprintFunctionLibrary::NormalizeToRangeClamped(float value, float min, float max)
+float UMathExBlueprintFunctionLibrary::NormalizeToRangeClamped(const float Value, const float Min, const float Max)
 {
-	const double normalizedToRange = UKismetMathLibrary::NormalizeToRange(value, min, max);
-	return FMath::Clamp(normalizedToRange, 0, 1);
+	const double NormalizedToRange = UKismetMathLibrary::NormalizeToRange(Value, Min, Max);
+	return FMath::Clamp(NormalizedToRange, 0, 1);
 }
 
-float UMathExBlueprintFunctionLibrary::ValueInCurveOrGiven(const UCurveFloat* curveFloat, float val)
+float UMathExBlueprintFunctionLibrary::ValueInCurveOrGiven(const UCurveFloat* CurveFloat, const float Val)
 {
-	return IsValid(curveFloat) ? curveFloat->GetFloatValue(val) : val;
+	return IsValid(CurveFloat) ? CurveFloat->GetFloatValue(Val) : Val;
 }
 
-bool UMathExBlueprintFunctionLibrary::IsWithinRange(const float val, const float min, const float max)
+bool UMathExBlueprintFunctionLibrary::IsWithinFloatRange(const float Val, const FFloatRange& FloatRange)
 {
-	return val >= min && val < max;
+	return Val >= FloatRange.GetLowerBoundValue() && Val <= FloatRange.GetUpperBoundValue();
 }
 
-bool UMathExBlueprintFunctionLibrary::IsWithinFloatRange(const float val, const FFloatRange& floatRange)
+float UMathExBlueprintFunctionLibrary::fBM(const float X, const float Z, const int Octaves, const float Scale, const float HeightScale, const float HeightOffset)
 {
-	return val >= floatRange.GetLowerBoundValue() && val <= floatRange.GetUpperBoundValue();
+	float Total = 0.0f;
+	float Frequency = 1;
+
+	for (int i = 0; i < Octaves; ++i)
+	{
+		Total += FMath::PerlinNoise2D(FVector2D(X * Scale * Frequency, Z * Scale * Frequency)) * HeightScale;
+		Frequency *= 2;
+	}
+
+	return Total + HeightOffset;
 }
 
-float UMathExBlueprintFunctionLibrary::NormalizeToFloatRange(float value, const FFloatRange& floatRange)
+float UMathExBlueprintFunctionLibrary::NormalizeToFloatRange(const float Value, const FFloatRange& FloatRange)
 {
-	return UKismetMathLibrary::NormalizeToRange(value, floatRange.GetLowerBound().GetValue(), floatRange.GetUpperBound().GetValue());
+	return UKismetMathLibrary::NormalizeToRange(Value, FloatRange.GetLowerBound().GetValue(), FloatRange.GetUpperBound().GetValue());
 }
 
-float UMathExBlueprintFunctionLibrary::LerpInFloatRange(float value, const FFloatRange& floatRange)
+float UMathExBlueprintFunctionLibrary::LerpInFloatRange(const float Value, const FFloatRange& FloatRange)
 {
-	return FMath::Lerp(floatRange.GetLowerBound().GetValue(), floatRange.GetUpperBound().GetValue(), value);
+	return FMath::Lerp(FloatRange.GetLowerBound().GetValue(), FloatRange.GetUpperBound().GetValue(), Value);
 }

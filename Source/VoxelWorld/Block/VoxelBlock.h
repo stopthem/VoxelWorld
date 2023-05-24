@@ -25,21 +25,27 @@ struct VOXELWORLD_API FVoxelBlock
 public:
 	FVoxelBlock();
 
-	explicit FVoxelBlock(const FVoxelMeshParameters& VoxelMeshParameters, AVoxelChunk* VoxelChunk);
+	explicit FVoxelBlock(const FVoxelBlockParameters& VoxelBlockParameters, AVoxelChunk* VoxelChunk);
 
 public:
-	EBlockType GetBlockType() const { return BlockType; }
+	void BuildCube() const;
+
+public:
+	EBlockType GetBlockType() const { return VoxelBlockParameters.BlockType; }
 
 protected:
-	EBlockType BlockType;
-
 	UPROPERTY(VisibleAnywhere)
 	AVoxelChunk* VoxelChunk;
 
-	FVector Offset;
+	FVoxelBlockParameters VoxelBlockParameters;
 
 protected:
 	bool HasSolidNeighbour(const FVector& OffsetDirVector) const;
+
+	FVector GetOffsetInMeters() const
+	{
+		return VoxelBlockParameters.Offset / 100.0f;
+	}
 
 	// UPROPERTY(VisibleAnywhere)
 	// FVector MeshCubeRadius = FVector(100.0f, 100.0f, 100.0f);
