@@ -21,7 +21,10 @@ public:
 	static void SetNum(TArray<TArray<TArray<TArrayType>>>& Array, int Width, int Height, int Depth);
 
 	template <typename TArrayType>
-	static bool IsInvalidIndex(TArray<TArray<TArray<TArrayType>>>& Array, int Width, int Height, int Depth);
+	static bool IsValidIndex(TArray<TArray<TArray<TArrayType>>>& Array, int Width, int Height, int Depth);
+
+	template <typename TArrayType>
+	static int Get3DPosInFlat(TArray<TArray<TArray<TArrayType>>>& Array, const int X, const int Y, const int Z);
 };
 
 template <typename TArrayType>
@@ -40,7 +43,7 @@ void FArray3DFunctionLibrary::SetNum(TArray<TArray<TArray<TArrayType>>>& Array, 
 }
 
 template <typename TArrayType>
-bool FArray3DFunctionLibrary::IsInvalidIndex(TArray<TArray<TArray<TArrayType>>>& Array, int Width, int Height, int Depth)
+bool FArray3DFunctionLibrary::IsValidIndex(TArray<TArray<TArray<TArrayType>>>& Array, int Width, int Height, int Depth)
 {
 	if (!Array.IsValidIndex(Width))
 	{
@@ -58,4 +61,10 @@ bool FArray3DFunctionLibrary::IsInvalidIndex(TArray<TArray<TArray<TArrayType>>>&
 	}
 
 	return true;
+}
+
+template <typename TArrayType>
+int FArray3DFunctionLibrary::Get3DPosInFlat(TArray<TArray<TArray<TArrayType>>>& Array, const int X, const int Y, const int Z)
+{
+	return Y + Array.Num() * (Z + Array[0][0].Num() * X);
 }

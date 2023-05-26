@@ -3,12 +3,15 @@
 
 #include "VoxelChunk.h"
 
+#include "ProceduralMeshComponent.h"
+#include "VoxelWorldManager.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "VoxelWorld/VoxelWorldGameModeBase.h"
 #include "VoxelWorld/Block/BlocksManager.h"
 #include "VoxelWorld/Block/VoxelBlock.h"
-#include "VoxelWorld/BlueprintFunctionLibraries/MathExBlueprintFunctionLibrary.h"
+#include "VoxelWorld/BlueprintFunctionLibraries/MeshExBlueprintFunctionLibrary.h"
 #include "VoxelWorld/CodeFunctionLibraries/Array3DFunctionLibrary.h"
+#include "VoxelWorld/Extra/FastNoiseLite.h"
 
 
 AVoxelChunk::AVoxelChunk()
@@ -20,100 +23,183 @@ AVoxelChunk::AVoxelChunk()
 	ProceduralMeshComponent->SetupAttachment(RootComponent);
 }
 
-void AVoxelChunk::BeginPlay()
+bool AVoxelChunk::TryGetBlockAt(const FVector& BlockArrayPos, FVoxelBlock& out_FoundBlock)
 {
-	Super::BeginPlay();
-
-	AVoxelWorldGameModeBase::Get(GetWorld())->OnManagersSpawned.AddDynamic(this, &ThisClass::OnManagersSpawned);
-}
-
-void AVoxelChunk::OnManagersSpawned(AVoxelWorldGameModeBase* VoxelWorldGameModeBase)
-{
-	const ABlocksManager* BlocksManager = VoxelWorldGameModeBase->GetManager<ABlocksManager>();
-
-	BuildChunk(BlocksManager);
-}
-
-bool AVoxelChunk::TryGetBlockAt(const FVector& Offset, FVoxelBlock& out_FoundBlock)
-{
-	if (!UKismetMathLibrary::InRange_FloatFloat(Offset.Y, 0, Width, true, false))
+	if (!IsWithinChunkBounds(BlockArrayPos))
 	{
 		return false;
 	}
 
-	if (!UKismetMathLibrary::InRange_FloatFloat(Offset.Z, 0, Height, true, false))
-	{
-		return false;
-	}
+	out_FoundBlock = ChunkBlocks[BlockArrayPos.Y][BlockArrayPos.Z][BlockArrayPos.X];
 
-	if (!UKismetMathLibrary::InRange_FloatFloat(Offset.X, 0, Depth, true, false))
-	{
-		return false;
-	}
-
-	out_FoundBlock = ChunkBlocks[Offset.Y][Offset.Z][Offset.X];
 	return true;
 }
 
-int AVoxelChunk::Get3DElementPosInFlat(const int X, const int Y, const int Z) const
+bool AVoxelChunk::IsWithinChunkBounds(const FVector& BlockArrayPos)
 {
-	return Y + Width * (Z + Depth * X);
-}
-
-void AVoxelChunk::BuildChunk(const ABlocksManager* BlocksManager)
-{
-	FArray3DFunctionLibrary::SetNum(ChunkBlocks, Width, Height, Depth);
-
-	ChunkBlockTypes.SetNum(Width * Depth * Height);
-
-	for (int i = 0; i < ChunkBlockTypes.Num(); ++i)
+	if (!UKismetMathLibrary::InRange_FloatFloat(BlockArrayPos.Y, 0, AVoxelWorldManager::Chunk_Dimensions.Y, true, false))
 	{
-		const int Y = i % Width;
-		const int Z = (i / Width) % Height;
-		const int X = i / (Width * Height);
-
-		const float fBM = UMathExBlueprintFunctionLibrary::fBM(Y, X, 18, 0.001f, 2.0f, 4);
-		UE_LOG(LogTemp, Warning, TEXT("offset in metric %s  fbm %f"), *FVector(Y,Z,X).ToString(), fBM);
-		ChunkBlockTypes[i] = fBM > Z ? EBlockType::Dirt : EBlockType::Air;
+		return false;
 	}
 
-	FVoxelBlockParameters VoxelBlockParameters(ProceduralMeshComponent, EBlockType::Stone, BlocksManager->GetBlockMaterial());
-
-	int32 MeshSectionGroup = 0;
-
-	for (int x = 0; x < Depth; ++x)
+	if (!UKismetMathLibrary::InRange_FloatFloat(BlockArrayPos.Z, 0, AVoxelWorldManager::Chunk_Dimensions.Z, true, false))
 	{
-		for (int z = 0; z < Height; ++z)
+		return false;
+	}
+
+	if (!UKismetMathLibrary::InRange_FloatFloat(BlockArrayPos.X, 0, AVoxelWorldManager::Chunk_Dimensions.X, true, false))
+	{
+		return false;
+	}
+
+	return true;
+}
+
+EVoxelQuadFace AVoxelChunk::GetNonSolidNeighbourFaces(const FVector& BlockArrayPos)
+{
+	// We have to set it to None, otherwise flag calculation is wrong.
+	EVoxelQuadFace NonSolidQuadFaces = EVoxelQuadFace::None;
+
+	// A nice little local function to prevent us to type much more.
+	auto CheckNeighbourForNonSolidFace = [&](const FVector& Direction, const EVoxelQuadFace ToBeAddedQuadFace)
+	{
+		const FVector NeighbourOffset = BlockArrayPos + Direction;
+
+		// const bool bIsWithinBounds = IsWithinChunkBounds(NeighbourOffset);
+
+		// Find the corresponding block type of neighbour block.
+		// We don't get the block directly because when we iterate through our 3d array, not all of the blocks are initialized and they are default which causes wrong calculation.
+		const int NeighbourBlockTypeIndex = FArray3DFunctionLibrary::Get3DPosInFlat(ChunkBlocks, NeighbourOffset.X, NeighbourOffset.Y, NeighbourOffset.Z);
+
+		// FColor color = FColor::Green;
+		// if (!bIsWithinBounds)
+		// {
+		// 	color = FColor::Red;
+		// }
+		// if (bIsWithinBounds && ChunkBlockTypes[NeighbourBlockTypeIndex] == EBlockType::Air)
+		// {
+		// 	color = FColor::Cyan;
+		// }
+		if (!IsWithinChunkBounds(NeighbourOffset) || ChunkBlockTypes[NeighbourBlockTypeIndex] == EBlockType::Air)
 		{
-			for (int y = 0; y < Width; ++y)
+			// Add given face flag to our flags.
+			NonSolidQuadFaces |= ToBeAddedQuadFace;
+			// UE_LOG(LogTemp, Warning, TEXT("looked from %s to metric offset %s added face %s"), *BlockOffset.ToString(), *Direction.ToString(), *UEnum::GetValueAsString(ToBeAddedQuadFace));
+		}
+
+		// DrawDebugLine(GetWorld(), BlockArrayPos, BlockArrayPos + Direction * 25.0f, color, true, -1, 0, 5);
+	};
+
+	CheckNeighbourForNonSolidFace(FVector::ForwardVector, EVoxelQuadFace::Front);
+	CheckNeighbourForNonSolidFace(FVector::BackwardVector, EVoxelQuadFace::Back);
+	CheckNeighbourForNonSolidFace(FVector::RightVector, EVoxelQuadFace::Right);
+	CheckNeighbourForNonSolidFace(FVector::LeftVector, EVoxelQuadFace::Left);
+	CheckNeighbourForNonSolidFace(FVector::UpVector, EVoxelQuadFace::Up);
+	CheckNeighbourForNonSolidFace(FVector::DownVector, EVoxelQuadFace::Down);
+
+	return NonSolidQuadFaces;
+}
+
+void AVoxelChunk::GenerateBlockTypes()
+{
+	// Set our block types num.
+	ChunkBlockTypes.SetNum(AVoxelWorldManager::Chunk_Dimensions.Y * AVoxelWorldManager::Chunk_Dimensions.X * AVoxelWorldManager::Chunk_Dimensions.Z);
+
+
+	// Determine the air and solid blocks with the fBM(fractal brownian motion).
+	// for (int i = 0; i < ChunkBlockTypes.Num(); ++i)
+	// {
+	// 	const float Y = (i % AVoxelWorldManager::Chunk_Dimensions.Y) + GetActorLocation().Y / 100;
+	// 	const float Z = ((i / AVoxelWorldManager::Chunk_Dimensions.Y) % AVoxelWorldManager::Chunk_Dimensions.Z) + GetActorLocation().Z / 100;
+	// 	const float X = (i / (AVoxelWorldManager::Chunk_Dimensions.Y * AVoxelWorldManager::Chunk_Dimensions.Z)) + GetActorLocation().X / 100;
+	//
+	// 	const float fBM = Noise.GetNoise(X, Y, Z);
+	// 	// UE_LOG(LogTemp, Warning, TEXT("offset in metric %s  fbm %f"), *FVector(Y,Z,X).ToString(), fBM);
+	// 	ChunkBlockTypes[i] = fBM < 0 ? EBlockType::Dirt : EBlockType::Air;
+	// }
+
+	// Set the height map.
+
+	// Create our noise.
+	FastNoiseLite Noise;
+
+	Noise.SetFrequency(NoiseFrequency);
+	Noise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
+	Noise.SetFractalType(FastNoiseLite::FractalType_FBm);
+
+	const FVector MetricActorLocation = GetActorLocation() / 100;
+
+	for (int x = 0; x < AVoxelWorldManager::Chunk_Dimensions.Z; ++x)
+	{
+		for (int y = 0; y < AVoxelWorldManager::Chunk_Dimensions.Y; ++y)
+		{
+			const float XLocation = x + MetricActorLocation.X;
+			const float YLocation = y + MetricActorLocation.Y;
+
+			const int Height = FMath::Clamp(FMath::RoundToInt((Noise.GetNoise(XLocation, YLocation) + 1) * AVoxelWorldManager::Chunk_Dimensions.X / 2), 0, AVoxelWorldManager::Chunk_Dimensions.X);
+
+			for (int h = 0; h < Height; h++)
 			{
-				VoxelBlockParameters.Offset = FVector(x, y, z) * 100.0f;
-				VoxelBlockParameters.MeshSectionGroup = MeshSectionGroup;
+				ChunkBlockTypes[FArray3DFunctionLibrary::Get3DPosInFlat(ChunkBlocks, x, y, h)] = EBlockType::Dirt;
+			}
 
-				MeshSectionGroup++;
-
-				VoxelBlockParameters.BlockType = ChunkBlockTypes[Get3DElementPosInFlat(x, y, z)];
-
-				ChunkBlocks[y][z][x] = FVoxelBlock(VoxelBlockParameters, this);
+			for (int s = Height; s < AVoxelWorldManager::Chunk_Dimensions.X; s++)
+			{
+				ChunkBlockTypes[FArray3DFunctionLibrary::Get3DPosInFlat(ChunkBlocks, x, y, s)] = EBlockType::Air;
 			}
 		}
 	}
+}
 
-	for (int x = 0; x < Depth; ++x)
+void AVoxelChunk::BuildChunk()
+{
+	// Set our 3d array num.
+	FArray3DFunctionLibrary::SetNum(ChunkBlocks, AVoxelWorldManager::Chunk_Dimensions.Y, AVoxelWorldManager::Chunk_Dimensions.Z, AVoxelWorldManager::Chunk_Dimensions.X);
+
+	GenerateBlockTypes();
+
+	const ABlocksManager* BlocksManager = AVoxelWorldGameModeBase::Get(GetWorld())->GetManager<ABlocksManager>();
+
+	// We are defaulting them because we will probably call those again.
+	ChunkMeshParams = FVoxelMeshParameters();
+	VertexCount = 0;
+
+	for (int x = 0; x < AVoxelWorldManager::Chunk_Dimensions.X; ++x)
 	{
-		for (int z = 0; z < Height; ++z)
+		for (int z = 0; z < AVoxelWorldManager::Chunk_Dimensions.Z; ++z)
 		{
-			for (int y = 0; y < Width; ++y)
+			for (int y = 0; y < AVoxelWorldManager::Chunk_Dimensions.Y; ++y)
 			{
-				FVoxelBlock Block = ChunkBlocks[y][z][x];
+				const EBlockType BlockType = ChunkBlockTypes[FArray3DFunctionLibrary::Get3DPosInFlat(ChunkBlocks, x, y, z)];
 
-				if (Block.GetBlockType() == EBlockType::Air)
+				FVoxelBlockParameters VoxelBlockParameters;
+				// This is the world offset, independent of array position of the block.
+				VoxelBlockParameters.Offset = FVector(x, y, z) * 100.0f + GetActorLocation();
+				VoxelBlockParameters.BlockType = BlockType;
+
+				ChunkBlocks[y][z][x] = FVoxelBlock(VoxelBlockParameters, this);
+
+				if (BlockType == EBlockType::Air)
 				{
 					continue;
 				}
 
-				Block.BuildCube();
+				FVoxelMeshParameters BlockMeshParams = UMeshExBlueprintFunctionLibrary::CalculateProceduralCube(VoxelBlockParameters, GetNonSolidNeighbourFaces(FVector(x, y, z)), VertexCount);
+				// We are incrementing this by the last created block's vertices because every block needs their unique triangle points.
+				VertexCount += BlockMeshParams.Vertices.Num();
+
+				ChunkMeshParams.AppendOtherMeshParameters(BlockMeshParams);
 			}
 		}
 	}
+
+	// Create mesh.
+	ProceduralMeshComponent->CreateMeshSection_LinearColor(0, ChunkMeshParams.Vertices, ChunkMeshParams.Triangles, ChunkMeshParams.Normals, ChunkMeshParams.UVs,
+	                                                       TArray<FLinearColor>(), ChunkMeshParams.Tangents, false);
+
+	// Set material.
+	ProceduralMeshComponent->SetMaterial(0, BlocksManager->GetBlockMaterial());
+
+	// Set our name accordingly to our world position.
+	SetActorLabel("Chunk_" + FString::FromInt(GetActorLocation().X) + "_" + FString::FromInt(GetActorLocation().Y) + "_" + FString::FromInt(GetActorLocation().Z));
 }

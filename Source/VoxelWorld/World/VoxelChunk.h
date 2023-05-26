@@ -5,9 +5,10 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "VoxelWorld/Block/VoxelBlock.h"
-
 #include "VoxelChunk.generated.h"
 
+enum class EBlockType : uint8;
+class AVoxelWorldManager;
 class AVoxelWorldGameModeBase;
 class ABlocksManager;
 class UProceduralMeshComponent;
@@ -24,46 +25,46 @@ class VOXELWORLD_API AVoxelChunk : public AActor
 public:
 	AVoxelChunk();
 
-protected:
-	// Where we wait for the VoxelGameModeBase OnManagersSpawned.
-	virtual void BeginPlay() override;
-
-	// This is where we start spawning our blocks.
-	UFUNCTION()
-	void OnManagersSpawned(AVoxelWorldGameModeBase* VoxelWorldGameModeBase);
-
-protected:
+private:
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<USceneComponent> SceneComponent;
 
 	// Mesh component that produces the mesh for us.
-	UPROPERTY(VisibleAnywhere, Category="BlockMesh")
+	UPROPERTY(VisibleAnywhere, Category="Block Mesh")
 	TObjectPtr<UProceduralMeshComponent> ProceduralMeshComponent;
 
-public:
-	int GetWidth() const { return Width; }
-	int GetHeight() const { return Height; }
-	int GetDepth() const { return Depth; }
+private:
+	// UPROPERTY(EditAnywhere, Category="Perlin Noise Settings")
+	// int PerlinOctaves = 18;
+	//
+	// UPROPERTY(EditAnywhere, Category="Perlin Noise Settings")
+	// float PerlinScale = 0.001f;
+	//
+	// UPROPERTY(EditAnywhere, Category="Perlin Noise Settings")
+	// float PerlinHeightScale = 2.0f;
+	//
+	// UPROPERTY(EditAnywhere, Category="Perlin Noise Settings")
+	// float PerlinHeightOffset = 4.0f;
 
-protected:
-	// Width of the 3D blocks array.
-	UPROPERTY(EditAnywhere)
-	int Width = 2;
-
-	// Height of the 3D blocks array.
-	UPROPERTY(EditAnywhere)
-	int Height = 2;
-
-	// Depth of the 3D blocks array.
-	UPROPERTY(EditAnywhere)
-	int Depth = 2;
+	UPROPERTY(EditAnywhere, Category="Noise Settings")
+	float NoiseFrequency = 0.03f;
 
 public:
 	TArray<EBlockType> GetChunkBlockTypes() { return ChunkBlockTypes; }
 
-	bool TryGetBlockAt(const FVector& Offset, FVoxelBlock& out_FoundBlock);
+	// NOTE : BlockArrayPos must be considered 3d array position, not world position.
+	bool TryGetBlockAt(const FVector& BlockArrayPos, FVoxelBlock& out_FoundBlock);
 
-protected:
+	// Is given ArrayOffset within 3d array bounds ?.
+	// NOTE : BlockArrayPos must be considered 3d array position, not world position.
+	bool IsWithinChunkBounds(const FVector& BlockArrayPos);
+
+private:
+	// NOTE : BlockArrayPos must be considered 3d array position, not world position.
+	EVoxelQuadFace GetNonSolidNeighbourFaces(const FVector& BlockArrayPos);
+
+private:
+	// 3d array of blocks.
 	TArray<TArray<TArray<FVoxelBlock>>> ChunkBlocks;
 
 	// flat = x + Width * (y + Depth * z) = original x,y,z
@@ -72,9 +73,14 @@ protected:
 	// z = i /  (Width * Height)
 	TArray<EBlockType> ChunkBlockTypes;
 
-public:
-	int Get3DElementPosInFlat(int X, int Y, int Z) const;
+	// Information used to create section in ProceduralMeshComponent.
+	FVoxelMeshParameters ChunkMeshParams;
 
-protected:
-	void BuildChunk(const ABlocksManager* BlocksManager);
+	int32 VertexCount = 0;
+
+private:
+	void GenerateBlockTypes();
+
+public:
+	void BuildChunk();
 };

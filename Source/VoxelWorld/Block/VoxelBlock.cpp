@@ -3,14 +3,13 @@
 
 #include "VoxelBlock.h"
 
-#include "BlocksManager.h"
 #include "VoxelWorld/BlueprintFunctionLibraries/MeshExBlueprintFunctionLibrary.h"
 #include "VoxelWorld/World/VoxelChunk.h"
 
 
 // Sets default values
 FVoxelBlock::FVoxelBlock()
-	: VoxelChunk(nullptr)
+	: VoxelChunk(nullptr), VoxelBlockParameters()
 {
 }
 
@@ -19,45 +18,45 @@ FVoxelBlock::FVoxelBlock(const FVoxelBlockParameters& VoxelBlockParameters, AVox
 {
 }
 
-void FVoxelBlock::BuildCube() const
-{
-	EVoxelQuadFace QuadFacesToGenerate = EVoxelQuadFace::None;
+//
+// FVoxelMeshParameters FVoxelBlock::CalculateBlock() const
+// {
+// 	EVoxelQuadFace QuadFacesToGenerate = EVoxelQuadFace::None;
+//
+// 	auto CheckNeighbourForQuadFace = [&](const FVector& OffsetDirVector, const EVoxelQuadFace ToBeAddedQuadFace)
+// 	{
+// 		if (!HasSolidNeighbour(OffsetDirVector))
+// 		{
+// 			QuadFacesToGenerate |= ToBeAddedQuadFace;
+// 			// UE_LOG(LogTemp, Warning, TEXT("looked from %s to metric offset %s added face %s"), *GetOffsetInMeters().ToString(), *OffsetDirVector.ToString(), *UEnum::GetValueAsString(ToBeAddedQuadFace));
+// 		}
+// 	};
+//
+// 	CheckNeighbourForQuadFace(FVector::ForwardVector, EVoxelQuadFace::Front);
+// 	CheckNeighbourForQuadFace(FVector::BackwardVector, EVoxelQuadFace::Back);
+// 	CheckNeighbourForQuadFace(FVector::RightVector, EVoxelQuadFace::Right);
+// 	CheckNeighbourForQuadFace(FVector::LeftVector, EVoxelQuadFace::Left);
+// 	CheckNeighbourForQuadFace(FVector::UpVector, EVoxelQuadFace::Up);
+// 	CheckNeighbourForQuadFace(FVector::DownVector, EVoxelQuadFace::Down);
+//
+// 	return UMeshExBlueprintFunctionLibrary::CalculateProceduralCube(VoxelBlockParameters, QuadFacesToGenerate);
+// }
 
-	auto CheckNeighbourForQuadFace = [&](const FVector& OffsetDirVector, const EVoxelQuadFace ToBeAddedQuadFace)
-	{
-		if (!HasSolidNeighbour(OffsetDirVector))
-		{
-			QuadFacesToGenerate |= ToBeAddedQuadFace;
-			// UE_LOG(LogTemp, Warning, TEXT("looked from %s to metric offset %s added face %s"), *GetOffsetInMeters().ToString(), *OffsetDirVector.ToString(), *UEnum::GetValueAsString(ToBeAddedQuadFace));
-		}
-	};
-
-	CheckNeighbourForQuadFace(FVector::ForwardVector, EVoxelQuadFace::Front);
-	CheckNeighbourForQuadFace(FVector::BackwardVector, EVoxelQuadFace::Back);
-	CheckNeighbourForQuadFace(FVector::RightVector, EVoxelQuadFace::Right);
-	CheckNeighbourForQuadFace(FVector::LeftVector, EVoxelQuadFace::Left);
-	CheckNeighbourForQuadFace(FVector::UpVector, EVoxelQuadFace::Up);
-	CheckNeighbourForQuadFace(FVector::DownVector, EVoxelQuadFace::Down);
-
-	// UE_LOG(LogTemp, Warning, TEXT("sent offset %s faces %i"), *GetOffsetInMeters().ToString(), static_cast<int32>(QuadFacesToGenerate));
-	UMeshExBlueprintFunctionLibrary::CreateProceduralCube(VoxelBlockParameters, QuadFacesToGenerate);
-}
-
-bool FVoxelBlock::HasSolidNeighbour(const FVector& OffsetDirVector) const
-{
-	FVoxelBlock Neighbour;
-	if (!VoxelChunk->TryGetBlockAt(GetOffsetInMeters() + OffsetDirVector, Neighbour))
-	{
-		return false;
-	}
-
-	if (Neighbour.GetBlockType() == EBlockType::Water || Neighbour.GetBlockType() == EBlockType::Air)
-	{
-		return false;
-	}
-
-	return true;
-}
+// bool FVoxelBlock::HasSolidNeighbour(const FVector& OffsetDirVector) const
+// {
+// 	FVoxelBlock Neighbour;
+// 	if (!VoxelChunk->TryGetBlockAt(GetLocalOffset() + OffsetDirVector, Neighbour))
+// 	{
+// 		return false;
+// 	}
+//
+// 	if (Neighbour.GetBlockType() == EBlockType::Water || Neighbour.GetBlockType() == EBlockType::Air)
+// 	{
+// 		return false;
+// 	}
+//
+// 	return true;
+// }
 
 // void FVoxelBlock::SetMaterialTiling()
 // {
