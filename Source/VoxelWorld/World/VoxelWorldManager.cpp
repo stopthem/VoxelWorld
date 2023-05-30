@@ -4,11 +4,13 @@
 #include "VoxelWorldManager.h"
 
 #include "VoxelChunk.h"
+#include "UE5Coro/AsyncCoroutine.h"
+#include "UE5Coro/LatentAwaiters.h"
 #include "VoxelWorld/VoxelWorldGameModeBase.h"
-
 
 AVoxelWorldManager::AVoxelWorldManager()
 {
+	PrimaryActorTick.bCanEverTick = true;
 }
 
 void AVoxelWorldManager::BeginPlay()
@@ -21,6 +23,11 @@ void AVoxelWorldManager::BeginPlay()
 
 void AVoxelWorldManager::OnManagersSpawned(AVoxelWorldGameModeBase* VoxelWorldGameModeBase)
 {
+	BuildChunks();
+}
+
+UE5Coro::TCoroutine<void> AVoxelWorldManager::BuildChunks() const
+{
 	for (int x = 0; x < World_Dimensions.Y; ++x)
 	{
 		for (int z = 0; z < World_Dimensions.X; ++z)
@@ -31,6 +38,9 @@ void AVoxelWorldManager::OnManagersSpawned(AVoxelWorldGameModeBase* VoxelWorldGa
 			SpawnedChunk->BuildChunk();
 
 			SpawnedChunk->SetFolderPath("Chunks");
+
+			// Wait until next tick.
+			co_await UE5Coro::Latent::NextTick();
 		}
 	}
 }

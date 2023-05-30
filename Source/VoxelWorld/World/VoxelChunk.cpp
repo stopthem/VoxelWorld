@@ -9,6 +9,7 @@
 #include "VoxelWorld/VoxelWorldGameModeBase.h"
 #include "VoxelWorld/Block/BlocksManager.h"
 #include "VoxelWorld/Block/VoxelBlock.h"
+#include "VoxelWorld/BlueprintFunctionLibraries/MathExBlueprintFunctionLibrary.h"
 #include "VoxelWorld/BlueprintFunctionLibraries/MeshExBlueprintFunctionLibrary.h"
 #include "VoxelWorld/CodeFunctionLibraries/Array3DFunctionLibrary.h"
 #include "VoxelWorld/Extra/FastNoiseLite.h"
@@ -105,19 +106,6 @@ void AVoxelChunk::GenerateBlockTypes()
 	// Set our block types num.
 	ChunkBlockTypes.SetNum(AVoxelWorldManager::Chunk_Dimensions.Y * AVoxelWorldManager::Chunk_Dimensions.X * AVoxelWorldManager::Chunk_Dimensions.Z);
 
-
-	// Determine the air and solid blocks with the fBM(fractal brownian motion).
-	// for (int i = 0; i < ChunkBlockTypes.Num(); ++i)
-	// {
-	// 	const float Y = (i % AVoxelWorldManager::Chunk_Dimensions.Y) + GetActorLocation().Y / 100;
-	// 	const float Z = ((i / AVoxelWorldManager::Chunk_Dimensions.Y) % AVoxelWorldManager::Chunk_Dimensions.Z) + GetActorLocation().Z / 100;
-	// 	const float X = (i / (AVoxelWorldManager::Chunk_Dimensions.Y * AVoxelWorldManager::Chunk_Dimensions.Z)) + GetActorLocation().X / 100;
-	//
-	// 	const float fBM = Noise.GetNoise(X, Y, Z);
-	// 	// UE_LOG(LogTemp, Warning, TEXT("offset in metric %s  fbm %f"), *FVector(Y,Z,X).ToString(), fBM);
-	// 	ChunkBlockTypes[i] = fBM < 0 ? EBlockType::Dirt : EBlockType::Air;
-	// }
-
 	// Set the height map.
 
 	// Create our noise.
@@ -126,15 +114,17 @@ void AVoxelChunk::GenerateBlockTypes()
 	Noise.SetFrequency(NoiseFrequency);
 	Noise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
 	Noise.SetFractalType(FastNoiseLite::FractalType_FBm);
-
-	const FVector MetricActorLocation = GetActorLocation() / 100;
+	Noise.SetFractalOctaves(NoiseFractalOctaves);
+	Noise.SetFractalGain(NoiseFractalGain);
+	Noise.SetFractalLacunarity(NoiseLacunarity);
+	Noise.SetFractalWeightedStrength(NoiseWeightedStr);
 
 	for (int x = 0; x < AVoxelWorldManager::Chunk_Dimensions.Z; ++x)
 	{
 		for (int y = 0; y < AVoxelWorldManager::Chunk_Dimensions.Y; ++y)
 		{
-			const float XLocation = x + MetricActorLocation.X;
-			const float YLocation = y + MetricActorLocation.Y;
+			const float XLocation = x + GetMetricActorLocation().X;
+			const float YLocation = y + GetMetricActorLocation().Y;
 
 			const int Height = FMath::Clamp(FMath::RoundToInt((Noise.GetNoise(XLocation, YLocation) + 1) * AVoxelWorldManager::Chunk_Dimensions.X / 2), 0, AVoxelWorldManager::Chunk_Dimensions.X);
 
@@ -164,6 +154,7 @@ void AVoxelChunk::BuildChunk()
 	ChunkMeshParams = FVoxelMeshParameters();
 	VertexCount = 0;
 
+	// Build the chunk.
 	for (int x = 0; x < AVoxelWorldManager::Chunk_Dimensions.X; ++x)
 	{
 		for (int z = 0; z < AVoxelWorldManager::Chunk_Dimensions.Z; ++z)

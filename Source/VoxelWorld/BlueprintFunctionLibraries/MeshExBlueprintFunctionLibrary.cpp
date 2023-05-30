@@ -52,8 +52,8 @@ FVoxelMeshParameters UMeshExBlueprintFunctionLibrary::CalculateQuad(const int32 
 	int32 Point3 = TriangleIndexCount++; // Forward Top Left
 	int32 Point4 = TriangleIndexCount++; // Forward Bottom Left
 
-	FVector VerticesRotationAxis;
-	float VerticesRotationAngle;
+	FVector VerticesRotationAxis = FVector(0);
+	float VerticesRotationAngle = 0.0f;
 
 	// Local function to keep us from typing much more.
 	auto SetRotationAxisAndAngle = [&](const FVector& Axis, const float Angle)

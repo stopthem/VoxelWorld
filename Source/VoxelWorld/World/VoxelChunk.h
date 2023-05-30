@@ -34,20 +34,20 @@ private:
 	TObjectPtr<UProceduralMeshComponent> ProceduralMeshComponent;
 
 private:
-	// UPROPERTY(EditAnywhere, Category="Perlin Noise Settings")
-	// int PerlinOctaves = 18;
-	//
-	// UPROPERTY(EditAnywhere, Category="Perlin Noise Settings")
-	// float PerlinScale = 0.001f;
-	//
-	// UPROPERTY(EditAnywhere, Category="Perlin Noise Settings")
-	// float PerlinHeightScale = 2.0f;
-	//
-	// UPROPERTY(EditAnywhere, Category="Perlin Noise Settings")
-	// float PerlinHeightOffset = 4.0f;
+	UPROPERTY(EditAnywhere, Category="Noise Settings")
+	int NoiseFractalOctaves = 18;
+
+	UPROPERTY(EditAnywhere, Category="Noise Settings")
+	float NoiseFractalGain = 0.001f;
 
 	UPROPERTY(EditAnywhere, Category="Noise Settings")
 	float NoiseFrequency = 0.03f;
+
+	UPROPERTY(EditAnywhere, Category="Noise Settings")
+	float NoiseLacunarity = 0.5f;
+
+	UPROPERTY(EditAnywhere, Category="Noise Settings")
+	float NoiseWeightedStr = 0.5f;
 
 public:
 	TArray<EBlockType> GetChunkBlockTypes() { return ChunkBlockTypes; }
@@ -77,6 +77,9 @@ private:
 	FVoxelMeshParameters ChunkMeshParams;
 
 	int32 VertexCount = 0;
+
+private:
+	FVector GetMetricActorLocation() const { return GetActorLocation() / 100.0f; }
 
 private:
 	void GenerateBlockTypes();

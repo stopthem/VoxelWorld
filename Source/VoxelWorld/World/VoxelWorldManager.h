@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "UE5Coro/Coroutine.h"
 #include "VoxelWorldManager.generated.h"
 
 class AVoxelWorldGameModeBase;
@@ -17,7 +18,7 @@ class VOXELWORLD_API AVoxelWorldManager : public AActor
 public:
 	AVoxelWorldManager();
 
-	inline static const FIntVector World_Dimensions = FIntVector(2);
+	inline static const FIntVector World_Dimensions = FIntVector(10);
 	inline static const FIntVector Chunk_Dimensions = FIntVector(10);
 
 protected:
@@ -31,4 +32,6 @@ private:
 private:
 	UFUNCTION()
 	void OnManagersSpawned(AVoxelWorldGameModeBase* VoxelWorldGameModeBase);
+
+	UE5Coro::TCoroutine<void> BuildChunks() const;
 };
